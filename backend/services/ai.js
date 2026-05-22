@@ -433,6 +433,106 @@ async function supplyChainFirmware(vendors = [], context = {}) {
   return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', vendor_risk: [] });
 }
 
+// ──────────────────────────────────────────────────────────────
+// Apply pass 7 — full backlog AI helpers (advisory only).
+// All outputs are non-authoritative; OT safety-critical decisions require
+// human-in-the-loop validation.
+// ──────────────────────────────────────────────────────────────
+
+// 17. Per-protocol parser (LLM-based, caller-supplied payload).
+// Supported protocols: Modbus, DNP3, IEC-61850 (GOOSE/SV).
+async function parseProtocolPayload(protocol, payload, context = {}) {
+  const sys = `${SYSTEM_PROMPT} You are an industrial protocol deep-parse expert. ` +
+    `The caller supplies a raw payload (hex, base64, JSON-ish capture or free-form summary) ` +
+    `for protocol "${protocol}". Decode it as best you can, surface behavioral deviations ` +
+    `from typical operation, and rank risk. ADVISORY ONLY — do not recommend any active mitigation. ` +
+    `Return strict JSON:
+{
+  "protocol": string,
+  "decoded": { "summary": string, "fields": [{ "name": string, "value": string, "interpretation": string }] },
+  "function_codes": [{ "code": string, "name": string, "frequency_hint": string }],
+  "behavioral_diff": [{ "observation": string, "vs_baseline": string, "severity": "low"|"medium"|"high"|"critical" }],
+  "risk": "low"|"medium"|"high"|"critical",
+  "confidence": number,
+  "advisory_only": true,
+  "summary": string
+}`;
+  const usr = `Protocol: ${protocol}\nPayload:\n${typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2)}\n\nContext:\n${JSON.stringify(context, null, 2)}`;
+  const r = await callOpenRouter(sys, usr);
+  const fb = { protocol, advisory_only: true, summary: typeof r === 'string' ? r : 'No response', behavioral_diff: [] };
+  return safeJsonParse(r, fb);
+}
+
+// 18. Asset auto-classifier — fingerprint to vendor/model/role/Purdue.
+async function classifyAssetFromFingerprint(fingerprint, context = {}) {
+  const sys = `${SYSTEM_PROMPT} Infer an OT asset's vendor/model/role/Purdue level from passive ` +
+    `network/host metadata fingerprint (MAC OUI, banners, protocol set, port set, hostname, NIC counts). ` +
+    `ADVISORY ONLY. Return strict JSON:
+{
+  "inferred_vendor": string,
+  "inferred_model": string,
+  "inferred_role": string,
+  "purdue_level": "L0"|"L1"|"L2"|"L3"|"L3.5"|"L4"|"L5",
+  "confidence": number,
+  "evidence": [{ "field": string, "value": string, "supports": string }],
+  "alternative_hypotheses": [{ "vendor": string, "model": string, "role": string, "why": string }],
+  "next_steps_to_confirm": [string],
+  "advisory_only": true,
+  "summary": string
+}`;
+  const usr = `Fingerprint:\n${typeof fingerprint === 'string' ? fingerprint : JSON.stringify(fingerprint, null, 2)}\n\nContext:\n${JSON.stringify(context, null, 2)}`;
+  const r = await callOpenRouter(sys, usr);
+  const fb = { advisory_only: true, summary: typeof r === 'string' ? r : 'No response', evidence: [] };
+  return safeJsonParse(r, fb);
+}
+
+// 19. IT/OT lateral-movement narrator — kill-chain story joining IT + ICS + zones.
+async function lateralMovementNarrative(itIocs = [], icsIocs = [], zoneCrossings = [], context = {}) {
+  const sys = `${SYSTEM_PROMPT} Compose a cross-domain (IT → OT) lateral-movement narrative ` +
+    `from an IT IOC set, an ICS IOC set and observed zone crossings. ADVISORY ONLY. Return strict JSON:
+{
+  "kill_chain": [{ "stage": string, "domain": "IT"|"OT"|"IT/OT", "actor_action": string, "evidence": [string], "mitre_ics_technique": { "id": string, "name": string } }],
+  "pivot_points": [{ "from_zone": string, "to_zone": string, "protocol": string, "narrative": string }],
+  "highest_confidence_path": string,
+  "uncertainty_notes": [string],
+  "recommended_hunts": [string],
+  "advisory_only": true,
+  "summary": string
+}`;
+  const usr = `IT IOCs:\n${JSON.stringify(itIocs, null, 2)}\n\nICS IOCs:\n${JSON.stringify(icsIocs, null, 2)}\n\nZone crossings:\n${JSON.stringify(zoneCrossings, null, 2)}\n\nContext:\n${JSON.stringify(context, null, 2)}`;
+  const r = await callOpenRouter(sys, usr);
+  const fb = { advisory_only: true, summary: typeof r === 'string' ? r : 'No response', kill_chain: [] };
+  return safeJsonParse(r, fb);
+}
+
+// 20. OT-context vulnerability prioritizer (CVE × criticality × exposure × safety).
+async function prioritizeVulnerabilities(vulns = [], assets = [], context = {}) {
+  const sys = `${SYSTEM_PROMPT} Rank a list of CVEs against an OT fleet by joining ` +
+    `CVE severity with asset criticality, exposure (zone/Purdue), and safety impact. ` +
+    `Distinct from generic vendor-patch impact: this returns an ordered priority list with scoring. ` +
+    `ADVISORY ONLY — never recommend deploying patches without a change window. Return strict JSON:
+{
+  "ranked": [{
+    "cve_id": string,
+    "asset_id": string,
+    "priority_score": number,
+    "criticality": "low"|"medium"|"high"|"critical",
+    "exposure": "isolated"|"segmented"|"reachable"|"internet_adjacent",
+    "safety_impact": "none"|"low"|"medium"|"high"|"critical",
+    "rationale": string,
+    "recommended_change_window_class": string
+  }],
+  "top_3_summary": string,
+  "scoring_method": string,
+  "advisory_only": true,
+  "summary": string
+}`;
+  const usr = `Vulnerabilities:\n${JSON.stringify(vulns, null, 2)}\n\nFleet:\n${JSON.stringify(assets, null, 2)}\n\nContext:\n${JSON.stringify(context, null, 2)}`;
+  const r = await callOpenRouter(sys, usr);
+  const fb = { advisory_only: true, summary: typeof r === 'string' ? r : 'No response', ranked: [] };
+  return safeJsonParse(r, fb);
+}
+
 module.exports = {
   callOpenRouter,
   safeJsonParse,
@@ -452,4 +552,9 @@ module.exports = {
   operatorActionReview,
   mitreIcsMapper,
   supplyChainFirmware,
+  // Apply pass 7
+  parseProtocolPayload,
+  classifyAssetFromFingerprint,
+  lateralMovementNarrative,
+  prioritizeVulnerabilities,
 };

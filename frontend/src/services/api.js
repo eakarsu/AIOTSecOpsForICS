@@ -170,6 +170,61 @@ export const getUnreadNotifications = () => request('/notifications/unread');
 export const markNotificationRead   = (id) => request(`/notifications/${id}/read`, { method: 'POST' });
 export const markAllNotificationsRead = () => request('/notifications/mark-all-read', { method: 'POST' });
 
+// ─── Apply pass 7 (full backlog implementation) ───
+// All AI v2 / authoring endpoints are ADVISORY ONLY for OT safety-critical
+// decisions. UI must not act on them automatically.
+
+// AI v2 endpoints — 4 verbs
+export const aiParseProtocolPayload   = (body) => request('/ai-v2/parse-protocol-payload',   { method: 'POST', body: JSON.stringify(body || {}) });
+export const aiClassifyAsset          = (body) => request('/ai-v2/classify-asset',           { method: 'POST', body: JSON.stringify(body || {}) });
+export const aiLateralMovementNarrative = (body) => request('/ai-v2/lateral-movement-narrative', { method: 'POST', body: JSON.stringify(body || {}) });
+export const aiPrioritizeVulns        = (body) => request('/ai-v2/prioritize-vulns',         { method: 'POST', body: JSON.stringify(body || {}) });
+export const getAIV2Samples = (feature) =>
+  request(`/ai-v2/samples?${new URLSearchParams({ feature: feature || '' }).toString()}`);
+
+// Zone editor (network conduits)
+export const networkConduitsApi = crud('network-conduits');
+
+// Change-window approvals
+export const changeWindowApprovalsApi = {
+  list:        (windowId) => request(`/change-window-approvals${windowId ? `?window_id=${encodeURIComponent(windowId)}` : ''}`),
+  request:     (d)         => request('/change-window-approvals/request', { method: 'POST', body: JSON.stringify(d) }),
+  decide:      (id, d)     => request(`/change-window-approvals/${id}/decide`, { method: 'POST', body: JSON.stringify(d) }),
+  conflicts:   ()          => request('/change-window-approvals/conflicts'),
+  calendar:    (from, to)  => {
+    const qs = new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) }).toString();
+    return request(`/change-window-approvals/calendar${qs ? `?${qs}` : ''}`);
+  },
+};
+
+// SIS audit register
+export const sisAuditApi = {
+  list:    (q = {}) => {
+    const qs = new URLSearchParams(q).toString();
+    return request(`/sis-audit${qs ? `?${qs}` : ''}`);
+  },
+  get:     (id)    => request(`/sis-audit/${id}`),
+  create:  (d)     => request('/sis-audit', { method: 'POST', body: JSON.stringify(d) }),
+  update:  (id, d) => request(`/sis-audit/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
+  remove:  (id)    => request(`/sis-audit/${id}`, { method: 'DELETE' }),
+  bypassRegister:   () => request('/sis-audit/views/bypass-register'),
+  proofTestSchedule: (days = 90) => request(`/sis-audit/views/proof-test-schedule?days=${days}`),
+};
+
+// Vendor advisory ingest
+export const vendorAdvisoriesApi = {
+  list:    (q = {}) => {
+    const qs = new URLSearchParams(q).toString();
+    return request(`/vendor-advisories${qs ? `?${qs}` : ''}`);
+  },
+  get:     (id)    => request(`/vendor-advisories/${id}`),
+  create:  (d)     => request('/vendor-advisories', { method: 'POST', body: JSON.stringify(d) }),
+  update:  (id, d) => request(`/vendor-advisories/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
+  remove:  (id)    => request(`/vendor-advisories/${id}`, { method: 'DELETE' }),
+  promote: (id)    => request(`/vendor-advisories/${id}/promote`, { method: 'POST', body: '{}' }),
+  pullLive:()      => request('/vendor-advisories/pull-live', { method: 'POST', body: '{}' }),
+};
+
 // Webhooks
 export const webhooksApi = {
   list:    ()         => request('/webhooks'),

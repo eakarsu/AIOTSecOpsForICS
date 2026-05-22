@@ -11,7 +11,7 @@ import { getAIHistory, getAISamples } from '../services/api';
  *   - run: async (values) => result
  *   - buttonLabel?
  */
-export default function AIPage({ title, subtitle, feature, inputs, run, buttonLabel = 'Run AI Analysis' }) {
+export default function AIPage({ title, subtitle, feature, inputs, run, buttonLabel = 'Run AI Analysis', samplesFn = null }) {
   const initial = Object.fromEntries(
     (inputs || []).map((i) => [i.key, i.defaultValue ?? (i.type === 'number' ? 0 : '')])
   );
@@ -30,7 +30,8 @@ export default function AIPage({ title, subtitle, feature, inputs, run, buttonLa
   useEffect(() => {
     let alive = true;
     if (!feature) return undefined;
-    getAISamples(feature)
+    const loader = typeof samplesFn === 'function' ? samplesFn : getAISamples;
+    loader(feature)
       .then((data) => {
         if (!alive) return;
         const list = Array.isArray(data?.samples) ? data.samples : [];
@@ -38,7 +39,7 @@ export default function AIPage({ title, subtitle, feature, inputs, run, buttonLa
       })
       .catch(() => { if (alive) setSamples([]); });
     return () => { alive = false; };
-  }, [feature]);
+  }, [feature, samplesFn]);
 
   const setField = (k, v) => setValues((s) => ({ ...s, [k]: v }));
 

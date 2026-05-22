@@ -45,6 +45,12 @@ async function run() {
     console.log('[seed] applying migrations...');
     const schema1 = fs.readFileSync(path.join(__dirname, '..', 'migrations', '001_schema.sql'), 'utf8');
     await client.query(schema1);
+    // Apply pass 7: zone editor, change-window approvals, SIS audit, vendor advisories
+    const schema2Path = path.join(__dirname, '..', 'migrations', '002_apply7.sql');
+    if (fs.existsSync(schema2Path)) {
+      const schema2 = fs.readFileSync(schema2Path, 'utf8');
+      await client.query(schema2);
+    }
 
     // ───────── ot_assets ─────────
     console.log('[seed] ot_assets...');

@@ -55,6 +55,21 @@ const AI_LINKS_V2 = [
   { to: '/ai/supply-chain-firmware',    label: 'AI · Supply-Chain Firmware' },
 ];
 
+// Apply pass 7 — full backlog implementation. All AI outputs advisory only.
+const AI_LINKS_V3 = [
+  { to: '/ai/parse-protocol-payload',     label: 'AI · Parse Protocol Payload' },
+  { to: '/ai/classify-asset',             label: 'AI · Asset Auto-Classifier' },
+  { to: '/ai/lateral-movement-narrative', label: 'AI · IT/OT Lateral-Movement' },
+  { to: '/ai/prioritize-vulns',           label: 'AI · OT Vuln Prioritizer' },
+];
+
+const BACKLOG_LINKS = [
+  { to: '/network-conduits',        label: 'Network Conduits (Zone Editor)' },
+  { to: '/change-window-approvals', label: 'Change-Window Approvals' },
+  { to: '/sis-audit',               label: 'SIS Audit Register' },
+  { to: '/vendor-advisories',       label: 'Vendor Advisory Ingest' },
+];
+
 export default function Sidebar() {
   const user = getStoredUser();
   return (
@@ -93,6 +108,16 @@ export default function Sidebar() {
 
       <div className="sidebar-group-label">AI · Strategic</div>
       {AI_LINKS_V2.map((l) => (
+        <NavLink key={l.to} to={l.to}>{l.label}</NavLink>
+      ))}
+
+      <div className="sidebar-group-label">AI · Deep Analysis</div>
+      {AI_LINKS_V3.map((l) => (
+        <NavLink key={l.to} to={l.to}>{l.label}</NavLink>
+      ))}
+
+      <div className="sidebar-group-label">Authoring & Audit</div>
+      {BACKLOG_LINKS.map((l) => (
         <NavLink key={l.to} to={l.to}>{l.label}</NavLink>
       ))}
 

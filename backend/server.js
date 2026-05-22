@@ -70,6 +70,19 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 // Custom views — visual aggregations (Purdue diagram, anomaly timeline)
 app.use('/api/custom-views', require('./routes/customViews'));
 
+// ─── Apply pass 7 (full backlog implementation) ───
+// All endpoints below are ADVISORY ONLY for OT safety-critical decisions.
+app.use('/api/ai-v2',                    require('./routes/aiV2'));                  // protocol-parser, asset-classifier, lateral-narrator, vuln-prioritizer
+app.use('/api/network-conduits',         require('./routes/networkConduits'));       // zone editor authoring CRUD
+app.use('/api/change-window-approvals',  require('./routes/changeWindowApprovals')); // approval workflow + conflicts + calendar
+app.use('/api/sis-audit',                require('./routes/sisAudit'));              // SIS audit register + bypass + proof-test scheduler
+app.use('/api/vendor-advisories',        require('./routes/vendorAdvisories'));      // manual ingest + ICS-CERT live 503 stub
+
+// 404 for unmatched /api routes — mounted last on purpose.
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'not_found', path: req.originalUrl });
+});
+
 app.listen(PORT, () => {
   console.log(`\nAIOTSecOpsForICS API running on http://localhost:${PORT}\n`);
 });

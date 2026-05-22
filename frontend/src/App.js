@@ -53,6 +53,19 @@ import { getToken } from './services/api';
 
 import './App.css';
 
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+// Apply pass 7 — full backlog implementation
+import AIParseProtocolPayloadPage      from './pages/AIParseProtocolPayloadPage';
+import AIClassifyAssetPage             from './pages/AIClassifyAssetPage';
+import AILateralMovementNarrativePage  from './pages/AILateralMovementNarrativePage';
+import AIPrioritizeVulnsPage           from './pages/AIPrioritizeVulnsPage';
+import NetworkConduitsPage             from './pages/NetworkConduitsPage';
+import ChangeWindowApprovalsPage       from './pages/ChangeWindowApprovalsPage';
+import SisAuditPage                    from './pages/SisAuditPage';
+import VendorAdvisoriesPage            from './pages/VendorAdvisoriesPage';
+
 function RequireAuth({ children }) {
   const location = useLocation();
   if (!getToken()) {
@@ -69,6 +82,9 @@ function ShellRoutes() {
         <Topbar />
         <div style={{ padding: '24px 32px' }}>
           <Routes>
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
             <Route path="/" element={<Dashboard />} />
 
             <Route path="/ot-assets"           element={<OtAssetsPage />} />
@@ -110,6 +126,16 @@ function ShellRoutes() {
             <Route path="/custom-views" element={<CustomViewsPage />} />
 
             <Route path="/webhooks" element={<WebhooksPage />} />
+
+            {/* Apply pass 7 — full backlog implementation */}
+            <Route path="/ai/parse-protocol-payload"      element={<AIParseProtocolPayloadPage />} />
+            <Route path="/ai/classify-asset"              element={<AIClassifyAssetPage />} />
+            <Route path="/ai/lateral-movement-narrative"  element={<AILateralMovementNarrativePage />} />
+            <Route path="/ai/prioritize-vulns"            element={<AIPrioritizeVulnsPage />} />
+            <Route path="/network-conduits"               element={<NetworkConduitsPage />} />
+            <Route path="/change-window-approvals"        element={<ChangeWindowApprovalsPage />} />
+            <Route path="/sis-audit"                      element={<SisAuditPage />} />
+            <Route path="/vendor-advisories"              element={<VendorAdvisoriesPage />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
