@@ -47,6 +47,8 @@ import CustomViewsPage from './pages/CustomViewsPage';
 
 // Admin
 import WebhooksPage from './pages/WebhooksPage';
+import ProductionGapsPage from './pages/ProductionGapsPage';
+import ProductionControlsPage from './pages/ProductionControlsPage';
 
 import LoginPage from './pages/LoginPage';
 import { getToken } from './services/api';
@@ -136,6 +138,8 @@ function ShellRoutes() {
             <Route path="/change-window-approvals"        element={<ChangeWindowApprovalsPage />} />
             <Route path="/sis-audit"                      element={<SisAuditPage />} />
             <Route path="/vendor-advisories"              element={<VendorAdvisoriesPage />} />
+            <Route path="/production-gaps"                element={<ProductionGapsPage />} />
+            <Route path="/production-controls"            element={<ProductionControlsPage />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

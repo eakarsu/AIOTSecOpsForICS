@@ -68,6 +68,8 @@ const BACKLOG_LINKS = [
   { to: '/change-window-approvals', label: 'Change-Window Approvals' },
   { to: '/sis-audit',               label: 'SIS Audit Register' },
   { to: '/vendor-advisories',       label: 'Vendor Advisory Ingest' },
+  { to: '/production-gaps',         label: 'Production Gaps' },
+  { to: '/production-controls',     label: 'Production Controls' },
 ];
 
 export default function Sidebar() {
