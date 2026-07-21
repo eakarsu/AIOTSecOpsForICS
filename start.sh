@@ -1,108 +1,29 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BACKEND_PORT="${BACKEND_PORT:-3061}"
+FRONTEND_PORT="${FRONTEND_PORT:-3060}"
+CHILD_PIDS=()
+require_file(){ [ -f "$1" ] || { echo "Missing required file: $1" >&2; exit 1; }; }
+require_dir(){ [ -d "$1" ] || { echo "Missing dependencies: $1 (install explicitly before startup)" >&2; exit 1; }; }
+port_free(){ if command -v lsof >/dev/null 2>&1 && lsof -ti ":$1" >/dev/null 2>&1; then echo "Port $1 is already in use; refusing to terminate another process." >&2; exit 1; fi; }
+cleanup(){ for pid in "${CHILD_PIDS[@]:-}"; do [ -n "$pid" ] && kill "$pid" 2>/dev/null || true; done; }
+trap cleanup INT TERM EXIT
+require_file "$PROJECT_DIR/.env"
+require_dir "$PROJECT_DIR/backend/node_modules"
+port_free "$BACKEND_PORT"
 
-set -e
-
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
-echo -e "${CYAN}╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║  AIOTSecOpsForICS - OT/ICS Security Operations       ║${NC}"
-echo -e "${CYAN}╚══════════════════════════════════════════════════════╝${NC}"
-echo ""
-
-# Load env
-if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
+if [ "${NODE_ENV:-}" = "test" ]; then
+  echo "Starting API-only test runtime on port $BACKEND_PORT."
+  cd "$PROJECT_DIR/backend"
+  exec env BACKEND_PORT="$BACKEND_PORT" PORT="$BACKEND_PORT" node server.js
 fi
 
-BACKEND_PORT=${BACKEND_PORT:-3061}
-FRONTEND_PORT=${FRONTEND_PORT:-3060}
-
-# Kill processes on used ports
-echo -e "${YELLOW}Cleaning up ports $BACKEND_PORT and $FRONTEND_PORT...${NC}"
-lsof -ti:$BACKEND_PORT 2>/dev/null | xargs kill -9 2>/dev/null || true
-lsof -ti:$FRONTEND_PORT 2>/dev/null | xargs kill -9 2>/dev/null || true
-pkill -9 -f "AIOTSecOpsForICS/backend" 2>/dev/null || true
-pkill -9 -f "AIOTSecOpsForICS/frontend" 2>/dev/null || true
-sleep 1
-echo -e "${GREEN}✓ Ports cleaned${NC}"
-
-# Check PostgreSQL
-echo -e "${YELLOW}Checking PostgreSQL...${NC}"
-if ! command -v psql &> /dev/null; then
-  echo -e "${RED}PostgreSQL is not installed. Please install it first.${NC}"
-  exit 1
-fi
-
-if ! pg_isready -h ${DB_HOST:-localhost} -p ${DB_PORT:-5432} > /dev/null 2>&1; then
-  echo -e "${YELLOW}Starting PostgreSQL...${NC}"
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    brew services start postgresql@14 2>/dev/null || brew services start postgresql 2>/dev/null || true
-  else
-    sudo systemctl start postgresql 2>/dev/null || true
-  fi
-  sleep 2
-fi
-echo -e "${GREEN}✓ PostgreSQL is running${NC}"
-
-# Create database if not exists
-echo -e "${YELLOW}Setting up database...${NC}"
-psql -h ${DB_HOST:-localhost} -p ${DB_PORT:-5432} -U ${DB_USER:-postgres} -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME:-ot_secops_ics}'" 2>/dev/null | grep -q 1 || \
-  psql -h ${DB_HOST:-localhost} -p ${DB_PORT:-5432} -U ${DB_USER:-postgres} -c "CREATE DATABASE ${DB_NAME:-ot_secops_ics}" 2>/dev/null || \
-  createdb -h ${DB_HOST:-localhost} -p ${DB_PORT:-5432} -U ${DB_USER:-postgres} ${DB_NAME:-ot_secops_ics} 2>/dev/null || true
-echo -e "${GREEN}✓ Database ready${NC}"
-
-# Install dependencies
-echo -e "${YELLOW}Installing dependencies...${NC}"
-cd backend && npm install --silent 2>/dev/null && cd ..
-cd frontend && npm install --silent 2>/dev/null && cd ..
-echo -e "${GREEN}✓ Dependencies installed${NC}"
-
-# Seed database
-echo -e "${YELLOW}Seeding database...${NC}"
-cd backend && node seed/seed.js && cd ..
-echo -e "${GREEN}✓ Database seeded${NC}"
-
-# Start backend with nodemon (auto-reload)
-echo -e "${BLUE}Starting backend on port $BACKEND_PORT...${NC}"
-(cd backend && npx nodemon server.js) &
-BACKEND_PID=$!
-
-sleep 2
-
-# Start frontend (React dev server auto-reloads)
-echo -e "${BLUE}Starting frontend on port $FRONTEND_PORT...${NC}"
-(cd frontend && BROWSER=none PORT=$FRONTEND_PORT npm start) &
-FRONTEND_PID=$!
-
-echo ""
-echo -e "${GREEN}╔══════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║  Application is starting...                      ║${NC}"
-echo -e "${GREEN}║  Frontend: http://localhost:$FRONTEND_PORT              ║${NC}"
-echo -e "${GREEN}║  Backend:  http://localhost:$BACKEND_PORT              ║${NC}"
-echo -e "${GREEN}║                                                  ║${NC}"
-echo -e "${GREEN}║  Both servers auto-reload on file changes        ║${NC}"
-echo -e "${GREEN}╚══════════════════════════════════════════════════╝${NC}"
-echo ""
-
-# Trap to cleanup on exit
-cleanup() {
-  echo -e "\n${YELLOW}Shutting down...${NC}"
-  kill $BACKEND_PID 2>/dev/null || true
-  kill $FRONTEND_PID 2>/dev/null || true
-  lsof -ti:$BACKEND_PORT 2>/dev/null | xargs kill -9 2>/dev/null || true
-  lsof -ti:$FRONTEND_PORT 2>/dev/null | xargs kill -9 2>/dev/null || true
-  pkill -9 -f "AIOTSecOpsForICS/backend" 2>/dev/null || true
-  pkill -9 -f "AIOTSecOpsForICS/frontend" 2>/dev/null || true
-  echo -e "${GREEN}✓ Shutdown complete${NC}"
-  exit 0
-}
-
-trap cleanup SIGINT SIGTERM
-
-wait
+require_dir "$PROJECT_DIR/frontend/node_modules"
+port_free "$FRONTEND_PORT"
+(cd "$PROJECT_DIR/backend" && BACKEND_PORT="$BACKEND_PORT" PORT="$BACKEND_PORT" node server.js) &
+CHILD_PIDS+=("$!")
+(cd "$PROJECT_DIR/frontend" && PORT="$FRONTEND_PORT" BROWSER=none npm start) &
+CHILD_PIDS+=("$!")
+echo "Services started without installing, seeding, migrating, creating databases, or reclaiming ports."
+wait "${CHILD_PIDS[@]}"

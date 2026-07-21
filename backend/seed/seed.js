@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+const crypto = require('node:crypto');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const pool = new Pool({
@@ -12,6 +13,12 @@ const pool = new Pool({
 });
 
 async function run() {
+  if (process.env.ALLOW_DESTRUCTIVE_SEED !== 'true') {
+    throw new Error('set ALLOW_DESTRUCTIVE_SEED=true to run the destructive demo seed explicitly');
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('destructive demo seeding is prohibited in production');
+  }
   const client = await pool.connect();
   try {
     console.log('[seed] resetting tables...');
@@ -468,13 +475,20 @@ async function run() {
 
     // ───────── users ─────────
     console.log('[seed] users...');
-    const users = [
-      ['admin@otsec.io',  'admin123',   'OT Security Admin', 'admin'],
-      ['analyst@otsec.io','analyst123', 'OT Analyst',        'analyst'],
-      ['viewer@otsec.io', 'viewer123',  'Plant Viewer',      'viewer'],
-    ];
-    for (const u of users) {
-      await client.query(`INSERT INTO users (email,password,name,role) VALUES ($1,$2,$3,$4)`, u);
+    const configuredUsers = [
+      [process.env.ADMIN_EMAIL, process.env.ADMIN_PASSWORD, 'OT Security Admin', 'admin'],
+      [process.env.DEMO_ANALYST_EMAIL || process.env.DEMO_EMAIL, process.env.DEMO_ANALYST_PASSWORD || process.env.DEMO_PASSWORD, 'OT Analyst', 'analyst'],
+      [process.env.DEMO_VIEWER_EMAIL, process.env.DEMO_VIEWER_PASSWORD, 'Plant Viewer', 'viewer'],
+    ].filter(([email, password]) => email && password);
+    const users = [...new Map(configuredUsers.map((user) => [user[0].toLowerCase(), user])).values()];
+    if (!users.length) throw new Error('at least one explicit ADMIN_* or DEMO_* credential pair is required');
+    for (const [email, password, name, role] of users) {
+      const salt = crypto.randomBytes(16);
+      const digest = await new Promise((resolve, reject) => {
+        crypto.scrypt(password, salt, 64, (error, key) => error ? reject(error) : resolve(key));
+      });
+      const encoded = `scrypt$${salt.toString('hex')}$${digest.toString('hex')}`;
+      await client.query(`INSERT INTO users (email,password,name,role) VALUES ($1,$2,$3,$4)`, [email, encoded, name, role]);
     }
 
     // ───────── notifications ─────────

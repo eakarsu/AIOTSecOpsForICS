@@ -1,0 +1,5 @@
+# Governed OT/ICS incident response
+The durable path is `/api/governed-ics-incidents`. It records trusted timestamped telemetry, rule/asset versions, evidence validation, severity, ownership, proposed response, independent operator/safety approval, containment receipts, rollback/recovery evidence, dispositions, and immutable tenant-scoped provenance.
+Apply `backend/migrations/003_governed_ics_response.sql` through controlled deployment. Telemetry/scanners, identity, ticketing, notifications, response orchestration, and evidence storage remain unconfigured until bounded credentials, deduplication/retry contracts, safe isolation, and rollback validation exist. AI routes are quarantined.
+The service cannot scan, isolate, block, patch, restart, or command equipment. Stale evidence and unknown severity hold; disruptive action requires operator and safety approval. Precision, recall, false positives, TTD/TTR, drift, and adversarial resistance require approved benign/attack corpora and isolated labs.
+Configure from `.env.example`; run `node --test backend/governance/*.test.cjs` and `bash -n start.sh`. Startup does not mutate infrastructure.

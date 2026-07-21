@@ -1,18 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const crypto = require('node:crypto');
 const { JWT_SECRET, authenticateToken } = require('../middleware/auth');
 const pool = require('../config/database');
 
-// Fallback demo admin used when the users table is unavailable.
-// Never overwritten anywhere.
-const DEMO_USER = {
-  id: 1,
-  email: 'admin@otsec.io',
-  password: 'admin123',
-  name: 'OT Security Admin',
-  role: 'admin',
-};
+function verifyScryptPassword(password, encoded){
+  return new Promise((resolve)=>{
+    const [scheme,saltHex,digestHex]=String(encoded||'').split('$');
+    if(scheme!=='scrypt'||!/^[a-f0-9]{32,}$/.test(saltHex||'')||!/^[a-f0-9]{128}$/.test(digestHex||''))return resolve(false);
+    crypto.scrypt(password,Buffer.from(saltHex,'hex'),64,(error,derived)=>{
+      if(error)return resolve(false);
+      const expected=Buffer.from(digestHex,'hex');
+      resolve(expected.length===derived.length&&crypto.timingSafeEqual(expected,derived));
+    });
+  });
+}
 
 async function findDbUser(email, password) {
   try {
@@ -22,7 +25,7 @@ async function findDbUser(email, password) {
     );
     if (!r.rows.length) return null;
     const u = r.rows[0];
-    if (u.password !== password) return null;
+    if (!(await verifyScryptPassword(password,u.password))) return null;
     return { id: u.id, email: u.email, name: u.name, role: u.role };
   } catch (e) {
     return null;
@@ -37,19 +40,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'email and password are required' });
     }
 
-    let user = await findDbUser(email, password);
-
-    if (!user) {
-      // Hardcoded demo commander still works even if users table missing
-      if (email === DEMO_USER.email && password === DEMO_USER.password) {
-        user = {
-          id: DEMO_USER.id,
-          email: DEMO_USER.email,
-          name: DEMO_USER.name,
-          role: DEMO_USER.role,
-        };
-      }
-    }
+    const user = await findDbUser(email, password);
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -64,13 +55,17 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', authenticateToken, (req, res) => {
-  res.json({
-    id: req.user.id,
-    email: req.user.email,
-    name: req.user.name,
-    role: req.user.role,
-  });
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, email, name, role FROM users WHERE id = $1 LIMIT 1',
+      [req.user.id]
+    );
+    if (!result.rows.length) return res.status(401).json({ error: 'Session user no longer exists' });
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Unable to verify persisted session' });
+  }
 });
 
 // GET /api/auth/users  (commander only)

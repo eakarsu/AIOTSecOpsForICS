@@ -5,6 +5,10 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const { authenticateToken } = require('./middleware/auth');
+const {validateRuntime}=require('./governance/runtime');
+const {createProviderGate}=require('./governance/providerGate');
+const governanceRouter=require('./governance/router');
+validateRuntime();
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3061;
@@ -23,6 +27,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+app.use(createProviderGate(['/api/ai','/api/ai-v2']));
 
 // Health check (public)
 app.get('/api/health', (req, res) => {
@@ -77,6 +82,7 @@ app.use('/api/network-conduits',         require('./routes/networkConduits'));  
 app.use('/api/change-window-approvals',  require('./routes/changeWindowApprovals')); // approval workflow + conflicts + calendar
 app.use('/api/sis-audit',                require('./routes/sisAudit'));              // SIS audit register + bypass + proof-test scheduler
 app.use('/api/vendor-advisories',        require('./routes/vendorAdvisories'));      // manual ingest + ICS-CERT live 503 stub
+app.use('/api/governed-ics-incidents',governanceRouter);
 
 // 404 for unmatched /api routes — mounted last on purpose.
 app.use('/api', (req, res) => {
