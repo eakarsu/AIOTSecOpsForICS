@@ -27,7 +27,6 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
-app.use(createProviderGate(['/api/ai','/api/ai-v2']));
 
 // Health check (public)
 app.get('/api/health', (req, res) => {
@@ -39,6 +38,13 @@ app.use('/api/auth', require('./routes/auth'));
 
 // Everything below this line requires a Bearer token.
 app.use('/api', authenticateToken);
+
+app.use(['/api/ai', '/api/ai-v2'], (req, res, next) => {
+  if (!process.env.OPENROUTER_API_KEY || !process.env.OPENROUTER_MODEL) {
+    return res.status(503).json({ error: 'OpenRouter provider is not configured' });
+  }
+  next();
+});
 
 // CRUD routes — 18 OT/ICS entities (all via _crudFactory which embeds
 // RBAC + bulk-import + attachments)

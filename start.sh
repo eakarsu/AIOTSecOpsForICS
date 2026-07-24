@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$PROJECT_DIR"
+require_file(){ [ -f "$1" ] || { echo "Missing required file: $1" >&2; exit 1; }; }
+require_file .env
+set -a
+source ./.env
+set +a
 BACKEND_PORT="${BACKEND_PORT:-3061}"
 FRONTEND_PORT="${FRONTEND_PORT:-3060}"
 CHILD_PIDS=()
-require_file(){ [ -f "$1" ] || { echo "Missing required file: $1" >&2; exit 1; }; }
 require_dir(){ [ -d "$1" ] || { echo "Missing dependencies: $1 (install explicitly before startup)" >&2; exit 1; }; }
 port_free(){ if command -v lsof >/dev/null 2>&1 && lsof -ti ":$1" >/dev/null 2>&1; then echo "Port $1 is already in use; refusing to terminate another process." >&2; exit 1; fi; }
 cleanup(){ for pid in "${CHILD_PIDS[@]:-}"; do [ -n "$pid" ] && kill "$pid" 2>/dev/null || true; done; }
 trap cleanup INT TERM EXIT
-require_file "$PROJECT_DIR/.env"
 require_dir "$PROJECT_DIR/backend/node_modules"
 port_free "$BACKEND_PORT"
 
@@ -21,9 +25,10 @@ fi
 
 require_dir "$PROJECT_DIR/frontend/node_modules"
 port_free "$FRONTEND_PORT"
+if [[ "${ALLOW_SCHEMA_MIGRATION:-false}" == "true" ]]; then node backend/scripts/prepareRuntime.js; fi
 (cd "$PROJECT_DIR/backend" && BACKEND_PORT="$BACKEND_PORT" PORT="$BACKEND_PORT" node server.js) &
 CHILD_PIDS+=("$!")
-(cd "$PROJECT_DIR/frontend" && PORT="$FRONTEND_PORT" BROWSER=none npm start) &
+(cd "$PROJECT_DIR/frontend" && PORT="$FRONTEND_PORT" BROWSER=none CI=true REACT_APP_API_BASE="http://127.0.0.1:$BACKEND_PORT/api" npm start) &
 CHILD_PIDS+=("$!")
-echo "Services started without installing, seeding, migrating, creating databases, or reclaiming ports."
+echo "Services started without installing, seeding, creating databases, or reclaiming ports."
 wait "${CHILD_PIDS[@]}"
