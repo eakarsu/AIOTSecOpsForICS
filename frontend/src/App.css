@@ -214,6 +214,9 @@ tr:hover td { background: rgba(59,130,246,0.04); }
   border-top: 1px solid #1e293b;
   display: flex; justify-content: flex-end; gap: 8px;
 }
+.confirm-modal { max-width: 440px; }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover td, .clickable-row:focus td { background: rgba(59, 130, 246, 0.08); }
 
 .form-grid {
   display: grid;
@@ -785,5 +788,4 @@ tr:hover td { background: rgba(59,130,246,0.04); }
   .login-card { padding: 22px; }
   .login-brand { font-size: 17px; }
 }
-
 

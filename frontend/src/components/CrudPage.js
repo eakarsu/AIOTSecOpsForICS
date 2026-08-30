@@ -26,6 +26,8 @@ export default function CrudPage({ title, subtitle, api, fields, statusKey, allo
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [viewing, setViewing] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState({});
   const [search, setSearch] = useState('');
@@ -63,9 +65,10 @@ export default function CrudPage({ title, subtitle, api, fields, statusKey, allo
   useEffect(() => { load(); }, []); // eslint-disable-line
   useEffect(() => { setPage(1); }, [search]);
 
-  const openCreate = () => { setDraft(emptyDraft()); setCreating(true); setEditing(null); };
-  const openEdit = (row) => { setDraft({ ...row }); setEditing(row); setCreating(false); };
-  const closeModal = () => { setCreating(false); setEditing(null); setDraft({}); };
+  const openCreate = () => { setDraft(emptyDraft()); setCreating(true); setEditing(null); setViewing(null); };
+  const openView = (row) => { setDraft({ ...row }); setViewing(row); setEditing(null); setCreating(false); };
+  const openEdit = (row) => { setDraft({ ...row }); setEditing(row); setViewing(null); setCreating(false); };
+  const closeModal = () => { setCreating(false); setEditing(null); setViewing(null); setDraft({}); };
 
   const handleSave = async () => {
     try {
@@ -76,9 +79,15 @@ export default function CrudPage({ title, subtitle, api, fields, statusKey, allo
     } catch (e) { alert(e.message); }
   };
 
-  const handleDelete = async (row) => {
-    if (!window.confirm(`Delete ${row[fields[0].key] || row.id}?`)) return;
-    try { await api.remove(row.id); load(); } catch (e) { alert(e.message); }
+  const requestDelete = (row) => setDeleteTarget(row);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await api.remove(deleteTarget.id);
+      setDeleteTarget(null);
+      closeModal();
+      load();
+    } catch (e) { alert(e.message); }
   };
 
   const setField = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
@@ -242,18 +251,24 @@ export default function CrudPage({ title, subtitle, api, fields, statusKey, allo
               </thead>
               <tbody>
                 {pagedRows.map((row) => (
-                  <tr key={row.id}>
+                  <tr
+                    key={row.id}
+                    className="clickable-row"
+                    tabIndex={0}
+                    onClick={() => openView(row)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openView(row); }}
+                  >
                     {fields.map((f) => <td key={f.key}>{renderCell(row, f)}</td>)}
                     <td style={{ textAlign: 'right' }}>
                       {allowAttachments && (
-                        <button className="btn secondary" onClick={() => openAttachments(row)} style={{ marginRight: 6 }}>
+                        <button className="btn secondary" onClick={(e) => { e.stopPropagation(); openAttachments(row); }} style={{ marginRight: 6 }}>
                           Files
                         </button>
                       )}
                       {writer && (
                         <>
-                          <button className="btn secondary" onClick={() => openEdit(row)} style={{ marginRight: 6 }}>Edit</button>
-                          <button className="btn danger" onClick={() => handleDelete(row)}>Delete</button>
+                          <button className="btn secondary" onClick={(e) => { e.stopPropagation(); openEdit(row); }} style={{ marginRight: 6 }}>Edit</button>
+                          <button className="btn danger" onClick={(e) => { e.stopPropagation(); requestDelete(row); }}>Delete</button>
                         </>
                       )}
                     </td>
@@ -273,11 +288,11 @@ export default function CrudPage({ title, subtitle, api, fields, statusKey, allo
         </>
       )}
 
-      {(creating || editing) && (
+      {(creating || editing || viewing) && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editing ? `Edit ${title}` : `New ${title}`}</h3>
+              <h3>{editing ? `Edit ${title}` : creating ? `New ${title}` : `${title} details`}</h3>
               <button className="modal-close" onClick={closeModal}>×</button>
             </div>
             <div className="modal-body">
@@ -286,15 +301,16 @@ export default function CrudPage({ title, subtitle, api, fields, statusKey, allo
                   <div key={f.key} className={`form-group ${f.type === 'textarea' ? 'full-width' : ''}`}>
                     <label>{f.label}</label>
                     {f.type === 'select' ? (
-                      <select value={draft[f.key] ?? ''} onChange={(e) => setField(f.key, e.target.value)}>
+                      <select disabled={Boolean(viewing)} value={draft[f.key] ?? ''} onChange={(e) => setField(f.key, e.target.value)}>
                         <option value="">—</option>
                         {(f.options || []).map((o) => <option key={o} value={o}>{o}</option>)}
                       </select>
                     ) : f.type === 'textarea' ? (
-                      <textarea value={draft[f.key] ?? ''} onChange={(e) => setField(f.key, e.target.value)} />
+                      <textarea disabled={Boolean(viewing)} value={draft[f.key] ?? ''} onChange={(e) => setField(f.key, e.target.value)} />
                     ) : (
                       <input
                         type={f.type || 'text'}
+                        disabled={Boolean(viewing)}
                         value={f.type === 'datetime-local' && draft[f.key]
                           ? String(draft[f.key]).slice(0, 16)
                           : (draft[f.key] ?? '')}
@@ -309,7 +325,24 @@ export default function CrudPage({ title, subtitle, api, fields, statusKey, allo
             </div>
             <div className="modal-footer">
               <button className="btn secondary" onClick={closeModal}>Cancel</button>
-              <button className="btn" onClick={handleSave}>{editing ? 'Save Changes' : 'Create'}</button>
+              {viewing && writer && <button className="btn secondary" onClick={() => openEdit(viewing)}>Edit</button>}
+              {(viewing || editing) && writer && <button className="btn danger" onClick={() => requestDelete(viewing || editing)}>Delete</button>}
+              {!viewing && <button className="btn" onClick={handleSave}>{editing ? 'Save Changes' : 'Create'}</button>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="modal-overlay" onClick={() => setDeleteTarget(null)}>
+          <div className="modal-content confirm-modal" role="alertdialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header"><h3>Delete record?</h3></div>
+            <div className="modal-body">
+              This permanently deletes <strong>{deleteTarget[fields[0].key] || deleteTarget.id}</strong> from PostgreSQL.
+            </div>
+            <div className="modal-footer">
+              <button className="btn secondary" onClick={() => setDeleteTarget(null)}>Cancel</button>
+              <button className="btn danger" onClick={confirmDelete}>Delete</button>
             </div>
           </div>
         </div>
