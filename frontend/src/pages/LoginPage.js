@@ -4,8 +4,10 @@ import { login, setToken, setStoredUser } from '../services/api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('admin@otsec.io');
-  const [password, setPassword] = useState('admin123');
+  const demoEmail = process.env.REACT_APP_DEMO_EMAIL || '';
+  const demoPassword = process.env.REACT_APP_DEMO_PASSWORD || '';
+  const [email, setEmail] = useState(demoEmail);
+  const [password, setPassword] = useState(demoPassword);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -56,8 +58,8 @@ export default function LoginPage() {
 
         <button
           type="button"
-          onClick={() => { setEmail(process.env.REACT_APP_DEMO_EMAIL || ''); setPassword(process.env.REACT_APP_DEMO_PASSWORD || ''); }}
-          disabled={!process.env.REACT_APP_DEMO_EMAIL || !process.env.REACT_APP_DEMO_PASSWORD}
+          onClick={() => { setEmail(demoEmail); setPassword(demoPassword); }}
+          disabled={!demoEmail || !demoPassword}
           aria-label="Auto Fill Demo Credentials"
           style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
         >
@@ -68,7 +70,7 @@ export default function LoginPage() {
         </button>
 
         <p className="login-hint">
-          Demo: <code>admin@otsec.io</code> / <code>admin123</code>
+          Demo account: <code>{demoEmail || 'not configured'}</code>. Use Auto Fill Demo Credentials.
         </p>
       </form>
     </div>
