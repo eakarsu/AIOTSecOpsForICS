@@ -14,7 +14,7 @@ export default function AITriageIcsAlertPage() {
         { key: 'context_notes', label: 'Context Notes', type: 'textarea',
           placeholder: 'Recent changes, related incidents, vendor advisories etc.' },
       ]}
-      run={(v) => aiTriageIcsAlert({ alert_text: v.alert_text, context: { notes: v.context_notes } })}
+      run={(v, requestOptions) => aiTriageIcsAlert({ alert_text: v.alert_text, context: { notes: v.context_notes } }, requestOptions)}
     />
   );
 }

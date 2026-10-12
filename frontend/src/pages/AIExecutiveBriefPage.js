@@ -12,7 +12,7 @@ export default function AIExecutiveBriefPage() {
         { key: 'notes', label: 'Optional CISO notes', type: 'textarea',
           placeholder: 'Add guidance to bias the brief (e.g. focus on patch backlog).' },
       ]}
-      run={(v) => aiExecutiveBrief({ notes: v.notes })}
+      run={(v, requestOptions) => aiExecutiveBrief({ notes: v.notes }, requestOptions)}
       buttonLabel="Generate Brief"
     />
   );

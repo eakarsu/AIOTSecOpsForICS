@@ -12,7 +12,7 @@ export default function AIVendorPatchImpactPage() {
         { key: 'advisory', label: 'Advisory', type: 'textarea',
           placeholder: 'e.g. SSA-714771 — Siemens S7-1500 auth bypass (critical). Affected V2.8.x.' },
       ]}
-      run={(v) => aiVendorPatchImpact({ advisory: v.advisory })}
+      run={(v, requestOptions) => aiVendorPatchImpact({ advisory: v.advisory }, requestOptions)}
     />
   );
 }

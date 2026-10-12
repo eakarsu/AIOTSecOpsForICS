@@ -13,7 +13,7 @@ export default function AIClassifyAssetPage() {
         { key: 'fingerprint_text', label: 'Fingerprint (MAC OUI, ports, banners, hostname, protocols)', type: 'textarea',
           placeholder: 'e.g. MAC OUI 00:1B:1B (Siemens), open 102, banner SIMATIC S7-1500, hostname PLC-REF-A01' },
       ]}
-      run={(v) => aiClassifyAsset({ fingerprint_text: v.fingerprint_text })}
+      run={(v, requestOptions) => aiClassifyAsset({ fingerprint_text: v.fingerprint_text }, requestOptions)}
     />
   );
 }

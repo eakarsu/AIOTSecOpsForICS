@@ -12,7 +12,7 @@ export default function AIAssetCriticalityPage() {
         { key: 'asset_text', label: 'Asset (free-form)', type: 'textarea',
           placeholder: 'e.g. PLC-1001 — Siemens S7-1500, Refinery Zone A, L1, feed valves to crude column.' },
       ]}
-      run={(v) => aiAssetCriticality({ asset_text: v.asset_text })}
+      run={(v, requestOptions) => aiAssetCriticality({ asset_text: v.asset_text }, requestOptions)}
     />
   );
 }

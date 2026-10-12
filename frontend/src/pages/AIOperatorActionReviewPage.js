@@ -9,7 +9,7 @@ export default function AIOperatorActionReviewPage() {
       feature="operator-action-review"
       subtitle="Review the most recent operator actions for out-of-policy or suspicious behavior."
       inputs={[]}
-      run={() => aiOperatorActionReview({})}
+      run={(_values, requestOptions) => aiOperatorActionReview({}, requestOptions)}
       buttonLabel="Review Recent Actions"
     />
   );

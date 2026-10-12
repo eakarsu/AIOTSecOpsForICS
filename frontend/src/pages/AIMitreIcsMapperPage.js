@@ -12,7 +12,7 @@ export default function AIMitreIcsMapperPage() {
         { key: 'observations_text', label: 'Observations (free-form)', type: 'textarea',
           placeholder: 'e.g. Off-hours Modbus 0x10 writes from engineering WS to refinery PLC; bypass of change-window controls.' },
       ]}
-      run={(v) => aiMitreIcsMapper({ observations_text: v.observations_text })}
+      run={(v, requestOptions) => aiMitreIcsMapper({ observations_text: v.observations_text }, requestOptions)}
     />
   );
 }

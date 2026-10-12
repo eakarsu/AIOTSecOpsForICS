@@ -12,7 +12,7 @@ export default function AIHuntAttackPathPage() {
         { key: 'hypothesis', label: 'Hunt Hypothesis', type: 'textarea',
           placeholder: 'e.g. A compromised engineering WS is staging unauthorized PLC firmware uploads across L2.' },
       ]}
-      run={(v) => aiHuntAttackPath({ hypothesis: v.hypothesis })}
+      run={(v, requestOptions) => aiHuntAttackPath({ hypothesis: v.hypothesis }, requestOptions)}
     />
   );
 }

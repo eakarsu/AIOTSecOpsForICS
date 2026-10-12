@@ -14,7 +14,7 @@ export default function AIDraftChangeProcedurePage() {
         { key: 'constraints', label: 'Constraints', type: 'textarea',
           placeholder: 'Window, redundancy available, who must approve, rollback budget.' },
       ]}
-      run={(v) => aiDraftChangeProcedure({ scope: v.scope, constraints: v.constraints })}
+      run={(v, requestOptions) => aiDraftChangeProcedure({ scope: v.scope, constraints: v.constraints }, requestOptions)}
     />
   );
 }

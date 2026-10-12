@@ -9,12 +9,12 @@ export default function AIControlLoopAnomalyPage() {
       feature="control-loop-anomaly"
       subtitle="Diagnose loop oscillation / freeze / saturation / suspicious behavior."
       inputs={[
-        { key: 'loop_id',         label: 'Loop ID',
+        { key: 'loop_id',         label: 'Loop ID', allowIllustrativeIdentifier: true, example: 'LP-3304',
           placeholder: 'e.g. LP-3304' },
         { key: 'telemetry_notes', label: 'Telemetry Notes', type: 'textarea',
           placeholder: 'What you see on PV / SP / CV recently.' },
       ]}
-      run={(v) => aiControlLoopAnomaly({ loop_id: v.loop_id, telemetry_notes: v.telemetry_notes })}
+      run={(v, requestOptions) => aiControlLoopAnomaly({ loop_id: v.loop_id, telemetry_notes: v.telemetry_notes }, requestOptions)}
     />
   );
 }

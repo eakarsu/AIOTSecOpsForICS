@@ -13,7 +13,7 @@ export default function AIPrioritizeVulnsPage() {
         { key: 'focus', label: 'Focus / Scope', type: 'textarea',
           placeholder: 'e.g. Restrict to safety systems, or to internet-adjacent assets, or to refinery cells.' },
       ]}
-      run={(v) => aiPrioritizeVulns({ focus: v.focus })}
+      run={(v, requestOptions) => aiPrioritizeVulns({ focus: v.focus }, requestOptions)}
     />
   );
 }

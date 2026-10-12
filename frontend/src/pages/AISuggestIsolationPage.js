@@ -14,7 +14,7 @@ export default function AISuggestIsolationPage() {
         { key: 'notes',  label: 'Context Notes', type: 'textarea',
           placeholder: 'Why isolation is being considered, what must keep running.' },
       ]}
-      run={(v) => aiSuggestIsolation({ target: v.target, notes: v.notes })}
+      run={(v, requestOptions) => aiSuggestIsolation({ target: v.target, notes: v.notes }, requestOptions)}
     />
   );
 }

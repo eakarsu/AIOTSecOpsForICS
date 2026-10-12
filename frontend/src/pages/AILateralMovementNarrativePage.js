@@ -17,11 +17,11 @@ export default function AILateralMovementNarrativePage() {
         { key: 'zone_crossings_text',  label: 'Zone Crossings',  type: 'textarea',
           placeholder: 'Corp → DMZ → Engineering → Refinery Cell A; sequence of Purdue zone transitions.' },
       ]}
-      run={(v) => aiLateralMovementNarrative({
+      run={(v, requestOptions) => aiLateralMovementNarrative({
         it_iocs_text: v.it_iocs_text,
         ics_iocs_text: v.ics_iocs_text,
         zone_crossings_text: v.zone_crossings_text,
-      })}
+      }, requestOptions)}
     />
   );
 }

@@ -15,7 +15,7 @@ export default function AIParseProtocolPayloadPage() {
         { key: 'payload_text', label: 'Payload (hex / capture / free-form)', type: 'textarea',
           placeholder: 'Paste raw bytes, capture summary or free-form description.' },
       ]}
-      run={(v) => aiParseProtocolPayload({ protocol: v.protocol, payload_text: v.payload_text })}
+      run={(v, requestOptions) => aiParseProtocolPayload({ protocol: v.protocol, payload_text: v.payload_text }, requestOptions)}
     />
   );
 }

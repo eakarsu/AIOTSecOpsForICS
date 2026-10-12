@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login, setToken, setStoredUser } from '../services/api';
 
 export default function LoginPage() {
+  const demoLoginLock = useRef(false);
+  const [demoLoginBusy, setDemoLoginBusy] = useState(false);
+
   const navigate = useNavigate();
   const demoEmail = process.env.REACT_APP_DEMO_EMAIL || '';
   const demoPassword = process.env.REACT_APP_DEMO_PASSWORD || '';
@@ -11,12 +14,12 @@ export default function LoginPage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, demoLoginCredentials) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const { token, user } = await login(email, password);
+      const { token, user } = await login((demoLoginCredentials?.email ?? email), (demoLoginCredentials?.password ?? password));
       setToken(token);
       setStoredUser(user);
       navigate('/', { replace: true });
@@ -24,6 +27,25 @@ export default function LoginPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async (event) => {
+    if (demoLoginLock.current) return;
+    event.preventDefault();
+    if (!demoEmail || !demoPassword) {
+      setError('Demo credentials are unavailable.');
+      return;
+    }
+    demoLoginLock.current = true;
+    setDemoLoginBusy(true);
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    try {
+      await handleSubmit(event, { email: demoEmail, password: demoPassword });
+    } finally {
+      demoLoginLock.current = false;
+      setDemoLoginBusy(false);
     }
   };
 
@@ -58,19 +80,19 @@ export default function LoginPage() {
 
         <button
           type="button"
-          onClick={() => { setEmail(demoEmail); setPassword(demoPassword); }}
-          disabled={!demoEmail || !demoPassword}
-          aria-label="Auto Fill Demo Credentials"
+          onClick={handleDemoLogin}
+          disabled={loading || demoLoginBusy || !demoEmail || !demoPassword}
+          aria-label="Log In as Demo"
           style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
         >
-          Auto Fill Demo Credentials
+          {demoLoginBusy ? 'Logging In…' : 'Log In as Demo'}
         </button>
         <button className="btn" type="submit" disabled={loading} style={{ width: '100%' }}>
           {loading ? <><span className="spinner" />Authenticating...</> : 'Sign In'}
         </button>
 
         <p className="login-hint">
-          Demo account: <code>{demoEmail || 'not configured'}</code>. Use Auto Fill Demo Credentials.
+          Demo account: <code>{demoEmail || 'not configured'}</code>. Use Log In as Demo.
         </p>
       </form>
     </div>

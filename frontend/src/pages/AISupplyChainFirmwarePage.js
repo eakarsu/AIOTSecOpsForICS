@@ -12,7 +12,7 @@ export default function AISupplyChainFirmwarePage() {
         { key: 'focus', label: 'Focus / Constraints', type: 'textarea',
           placeholder: 'Optional — narrow to a vendor or recently-onboarded suppliers.' },
       ]}
-      run={(v) => aiSupplyChainFirmware({ focus: v.focus })}
+      run={(v, requestOptions) => aiSupplyChainFirmware({ focus: v.focus }, requestOptions)}
       buttonLabel="Assess Supply Chain"
     />
   );

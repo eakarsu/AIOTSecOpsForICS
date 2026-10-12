@@ -14,7 +14,7 @@ export default function AIBaselineProtocolPage() {
         { key: 'observation',  label: 'Observation Notes', type: 'textarea',
           placeholder: 'Recent observed flows, sampling window, source assets etc.' },
       ]}
-      run={(v) => aiBaselineProtocol({ zone: v.zone, protocol: v.protocol, observation: { notes: v.observation } })}
+      run={(v, requestOptions) => aiBaselineProtocol({ zone: v.zone, protocol: v.protocol, observation: { notes: v.observation } }, requestOptions)}
     />
   );
 }

@@ -12,7 +12,7 @@ export default function AISafetyImpactPage() {
         { key: 'event', label: 'Event Description', type: 'textarea',
           placeholder: 'e.g. SIS-2204 forced into bypass for 4 minutes during unauthorized Modbus writes to PLC-1004.' },
       ]}
-      run={(v) => aiSafetyImpact({ event: v.event })}
+      run={(v, requestOptions) => aiSafetyImpact({ event: v.event }, requestOptions)}
     />
   );
 }

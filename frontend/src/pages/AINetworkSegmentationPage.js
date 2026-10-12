@@ -12,7 +12,7 @@ export default function AINetworkSegmentationPage() {
         { key: 'focus', label: 'Focus / Constraints', type: 'textarea',
           placeholder: 'Optional — narrow to a subset of zones or a posture concern.' },
       ]}
-      run={(v) => aiNetworkSegmentation({ focus: v.focus })}
+      run={(v, requestOptions) => aiNetworkSegmentation({ focus: v.focus }, requestOptions)}
       buttonLabel="Analyze Segmentation"
     />
   );

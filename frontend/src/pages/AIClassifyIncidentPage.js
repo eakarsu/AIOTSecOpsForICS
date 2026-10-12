@@ -14,7 +14,7 @@ export default function AIClassifyIncidentPage() {
         { key: 'context_notes', label: 'Context Notes', type: 'textarea',
           placeholder: 'Related alerts, prior incidents, vendor info.' },
       ]}
-      run={(v) => aiClassifyIncident({ incident_text: v.incident_text, context: { notes: v.context_notes } })}
+      run={(v, requestOptions) => aiClassifyIncident({ incident_text: v.incident_text, context: { notes: v.context_notes } }, requestOptions)}
     />
   );
 }
